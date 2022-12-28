@@ -17,6 +17,7 @@ int main(int argc, char* argv[])
 cv::imshow("Display Image", image);
 
 cv::waitKey(0);
+std::cout << "Thanks for playing!" << std::endl;
 return 0;
 
 

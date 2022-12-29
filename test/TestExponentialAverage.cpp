@@ -1,10 +1,9 @@
 //Unit tests ensure CMake is setup properly
 #include <gtest/gtest.h>
-#include <iostream>
-#include <opencv2/opencv.hpp>
+#include <warp/ExponentialAverage.h>
 
 
-TEST(unitTests, readImage)
+TEST(ExponentialAverageTests, readImage)
 {
   cv::Mat image;
   image = cv::imread("../angry_pepe.jpg",1);

@@ -17,4 +17,4 @@ class I_Processor
 
     //actual functions
     virtual cv::cuda::GpuMat processNewImage(cv::cuda::GpuMat& newImage) = 0;
-}
+};

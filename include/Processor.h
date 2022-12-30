@@ -5,7 +5,7 @@
 // file I_ReferenceImage.h
 
 //Includes
-#include <warp/I_Processor.h>
+#include <I_Processor.h>
 #include <memory>
 
 /// \brief abstract class describing what a reference image must do /
@@ -24,4 +24,4 @@ class Processor : I_Processor
 
   private:
     std::unique_ptr<I_ReferenceImage> m_ref;
-}
+};

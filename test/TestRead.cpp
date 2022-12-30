@@ -7,7 +7,7 @@
 TEST(unitTests, readImage)
 {
   cv::Mat image;
-  image = cv::imread("../angry_pepe.jpg",1);
+  image = cv::imread("testData/angry_pepe.jpg",1);
 
   if(!image.data)
   {

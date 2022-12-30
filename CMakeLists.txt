@@ -1,35 +1,44 @@
-cmake_minimum_required( VERSION 3.16.3 )
-#file(TO_CMAKE_PATH $ENV{LOCAL_ROOT} LOCAL_ROOT)
+# Include VCPKG
 set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
+
+cmake_minimum_required(VERSION 3.24)
 
 #Project name
 project(warp)
-#include (cmake/dist.cmake)
+
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED)
 
-include_directories(include)
 add_subdirectory(src)
-add_subdirectory(test)
 
-find_package(OpenCV REQUIRED)
+find_package(LibArchive REQUIRED)
+find_package(OpenCV CONFIG REQUIRED)
 
-#add_executable(Test "main.cpp")
 add_executable(main)
 target_sources( main 
-                PRIVATE
-                "src/main.cpp"
+                PRIVATE "src/main.cpp"
               )
-target_link_libraries(main ${OpenCV_LIBS})
-
+target_include_directories(main 
+                          PUBLIC "${CMAKE_SOURCE_DIR}/include" 
+                          PUBLIC ${LibArchive_INCLUDE_DIRS}
+)
+target_link_libraries(main 
+                      PUBLIC ${OpenCV_LIBS} 
+                      PUBLIC ${LibArchive_LIBRARIES}
+)
 ### Unit Tests (TBD)
-enable_testing()
-include(GoogleTest)
-find_package(GTest CONFIG REQUIRED)
-add_executable(unitTests)
-target_sources( unitTests
-                PRIVATE
-                "test/TestRead.cpp")
-target_link_libraries(unitTests PRIVATE ${OpenCV_LIBS} gtest gtest_main pthread)
-gtest_discover_tests(unitTests)
+
+add_subdirectory(test)
+#enable_testing()
+#include(GoogleTest)
+#find_package(GTest CONFIG REQUIRED)
+#add_executable(unitTests)
+#target_include_directories(unitTests PRIVATE "${CMAKE_SOURCE_DIR}/include")
+#target_sources( unitTests
+#                PRIVATE
+#                  "test/TestRead.cpp"
+#                  "include/ExponentialAverage.h"
+#                  "test/TestExponentialAverage.cpp")
+#target_link_libraries(unitTests PRIVATE ${OpenCV_LIBS} gtest gtest_main pthread)
+#gtest_discover_tests(unitTests)

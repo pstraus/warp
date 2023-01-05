@@ -5,12 +5,12 @@
 		}
 	],
 	"settings": {
-		
+		"files.associations": {
+			"*.inc": "cpp",
+			"*.ch": "cpp"
+		}
 	},
-	
-  "cmake.configureSettings": {
-    "CMAKE_TOOLCHAIN_FILE": "vcpkg/scripts/buildsystems/vcpkg.cmake"
-  }
-
-
+	"cmake.configureSettings": {
+		"CMAKE_TOOLCHAIN_FILE": "vcpkg/scripts/buildsystems/vcpkg.cmake"
+	}
 }

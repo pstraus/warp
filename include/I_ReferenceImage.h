@@ -12,7 +12,8 @@
 class I_ReferenceImage
 {
   public:
-    virtual const cv::cuda::GpuMat& getReferenceImage() const = 0;
+    virtual ~I_ReferenceImage() = default;
+    virtual const cv::cuda::GpuMat getReferenceImage() const = 0;
     virtual void update(const cv::cuda::GpuMat& newImage) = 0;
     virtual bool valid() const = 0;
 };

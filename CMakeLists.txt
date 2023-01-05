@@ -1,4 +1,4 @@
-# Include VCPKG
+### Include VCPKG
 set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
 
 cmake_minimum_required(VERSION 3.24)
@@ -6,9 +6,15 @@ cmake_minimum_required(VERSION 3.24)
 #Project name
 project(warp)
 
-
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED)
+#set(CMAKE_CXX_FLAGS "-Wl, -Wno-undef")
+#set(CMAKE_CXX_FLAGS -lstdc++)
+
+#VCPKG compiled opencv using gcc...
+#if(CMAKE_CXX_COMPILER MATCHES clang)
+#set(CMAKE_CXX_FLAGS -stdlib="libstdc++")
+#endif()
 
 add_subdirectory(src)
 
@@ -18,6 +24,8 @@ find_package(OpenCV CONFIG REQUIRED)
 add_executable(main)
 target_sources( main 
                 PRIVATE "src/main.cpp"
+                PRIVATE "src/ExponentialAverage.cpp"
+                PRIVATE "src/WarpingProcessor.cpp"
               )
 target_include_directories(main 
                           PUBLIC "${CMAKE_SOURCE_DIR}/include" 
@@ -30,6 +38,7 @@ target_link_libraries(main
 ### Unit Tests (TBD)
 
 add_subdirectory(test)
+file(COPY "testData" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 #enable_testing()
 #include(GoogleTest)
 #find_package(GTest CONFIG REQUIRED)

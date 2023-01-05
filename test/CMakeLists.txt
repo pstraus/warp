@@ -13,7 +13,10 @@ target_sources( unitTests
                   "TestRead.cpp"
                   "${CMAKE_SOURCE_DIR}/include/ExponentialAverage.h"
                   "${CMAKE_SOURCE_DIR}/src/ExponentialAverage.cpp"
-                  "TestExponentialAverage.cpp")
+                  "TestExponentialAverage.cpp"
+                  "${CMAKE_SOURCE_DIR}/include/WarpingProcessor.h"
+                  "${CMAKE_SOURCE_DIR}/src/WarpingProcessor.cpp"
+                  "TestWarpingProcessor.cpp")
 target_link_libraries(unitTests 
                       PUBLIC ${OpenCV_LIBS} 
                       PRIVATE gtest gtest_main pthread

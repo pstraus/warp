@@ -7,13 +7,14 @@
 
 //Includes
 #include <opencv2/opencv.hpp>
+#include <opencv2/core/cuda.hpp>
 
 /// \brief abstract class describing what a Processor class must do
-class I_Processor
+class I_CudaProcessor
 {
   public:
-    virtual ~Processor() = default;
+    virtual ~I_CudaProcessor() = default;
 
     //actual functions
-    virtual cv::Mat processNewImage(cv::Mat& newImage) = 0;
+    virtual cv::cuda::GpuMat processNewImage(cv::cuda::GpuMat& newImage) = 0;
 };

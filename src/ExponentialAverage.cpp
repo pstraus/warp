@@ -10,27 +10,38 @@
 
 /// \brief abstract class describing what a reference image must do /
 using namespace cv;
-using namespace cv::cuda;
 
-ExponentialAverage::ExponentialAverage(const GpuMat &firstImage, const double alpha)
+ExponentialAverage::ExponentialAverage(double alpha)
+: m_initialized{false}, m_alpha{alpha}
+{}
+
+ExponentialAverage::ExponentialAverage(const cuda::GpuMat& firstImage, double alpha)
     : m_ref{firstImage}, m_initialized(true), m_alpha(alpha)
 {
   // Nothing to do
 }
 
 // actual functions
-const GpuMat &ExponentialAverage::getReferenceImage() const
+const cuda::GpuMat ExponentialAverage::getReferenceImage() const
 {
   return this->m_ref;
 }
-void ExponentialAverage::update(const cv::cuda::GpuMat &newImage)
+void ExponentialAverage::update(const cv::cuda::GpuMat& newImage)
 {
+  double beta = 1.0 - m_alpha;
+  std::cout << "m_initialized is: " <<m_initialized << "\t m_alpha is: " << m_alpha << std::endl;
+
+  cv::Mat testImage;
+  m_ref.download(testImage);
+  cv::imshow("reference", testImage);
+  cv::waitKey(25);
   if(this->m_initialized){
-    addWeighted(this->m_ref, m_alpha, newImage, 1.0-m_alpha, 0.0, this->m_ref, -1, Stream::Null());
+    cuda::GpuMat tmp(this->m_ref);
+    cuda::addWeighted(tmp, m_alpha, newImage, beta, 0.0, this->m_ref, -1, cuda::Stream::Null());
   }
   else{
-    std::string error("attempting to access reference image before it is valid or initialized!");
-    throw(std::logic_error(error));
+  this->m_ref = newImage;
+  this->m_initialized = true;
   }
 }
 bool ExponentialAverage::valid() const

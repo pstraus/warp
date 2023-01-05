@@ -4,6 +4,14 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/cuda.hpp>
 
+TEST(ExponentialAverageTests, initializes_no_image)
+{
+  ExponentialAverage test(0.2);
+  
+  EXPECT_FALSE(test.valid());
+
+}
+
 TEST(ExponentialAverageTests, initializes)
 {
   cv::Mat image = cv::imread("testData/angry_pepe.jpg");

@@ -1,14 +1,16 @@
 // paul.straus@gmail.com
 // all rights reserved
 
-// file I_ReferenceImage.h
+// file ExponentialAverage.cpp
 
 // Includes
 #include <ExponentialAverage.h>
 #include <stdexcept>
+#include <opencv2/core/cuda.hpp>
+#include <opencv2/cudaimgproc.hpp>
 #include <opencv2/cudaarithm.hpp>
 
-/// \brief abstract class describing what a reference image must do /
+/// \brief Concrete implementation 
 using namespace cv;
 
 ExponentialAverage::ExponentialAverage(double alpha)
@@ -22,27 +24,22 @@ ExponentialAverage::ExponentialAverage(const cuda::GpuMat& firstImage, double al
 }
 
 // actual functions
-const cuda::GpuMat ExponentialAverage::getReferenceImage() const
+const cuda::GpuMat& ExponentialAverage::getReferenceImage() const
 {
   return this->m_ref;
 }
 void ExponentialAverage::update(const cv::cuda::GpuMat& newImage)
 {
-  double beta = 1.0 - m_alpha;
-  std::cout << "m_initialized is: " <<m_initialized << "\t m_alpha is: " << m_alpha << std::endl;
-
-  cv::Mat testImage;
-  m_ref.download(testImage);
-  cv::imshow("reference", testImage);
-  cv::waitKey(25);
   if(this->m_initialized){
-    cuda::GpuMat tmp(this->m_ref);
-    cuda::addWeighted(tmp, m_alpha, newImage, beta, 0.0, this->m_ref, -1, cuda::Stream::Null());
+    cuda::GpuMat newReference;   
+    cuda::addWeighted(m_ref, m_alpha, newImage, 1.0-m_alpha, 0.0, newReference);
+
+    m_ref = newReference;
   }
   else{
-  this->m_ref = newImage;
-  this->m_initialized = true;
+    this->m_initialized = true;
   }
+  
 }
 bool ExponentialAverage::valid() const
 {

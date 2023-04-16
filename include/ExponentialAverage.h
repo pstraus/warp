@@ -2,12 +2,12 @@
 // all rights reserved
 #pragma once
 
-// file I_ReferenceImage.h
+// file ExponentialAverage.h
 
 //Includes
 #include <I_ReferenceImage.h>
 
-/// \brief abstract class describing what a reference image must do /
+/// \brief concrete implementation of a reference image generator
 class ExponentialAverage : public I_ReferenceImage
 {
   public:
@@ -20,7 +20,7 @@ class ExponentialAverage : public I_ReferenceImage
     //There's some rule of 5 things that should be done here; functionally, we never intend to copy / move this
 
     //actual functions
-    const cv::cuda::GpuMat getReferenceImage() const override;
+    const cv::cuda::GpuMat& getReferenceImage() const override;
     void update(const cv::cuda::GpuMat& newImage) override;
     bool valid() const override;
 

@@ -12,7 +12,7 @@
 class I_Processor
 {
   public:
-    virtual ~Processor() = default;
+    virtual ~I_Processor() = default;
 
     //actual functions
     virtual cv::Mat processNewImage(cv::Mat& newImage) = 0;

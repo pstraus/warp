@@ -10,6 +10,7 @@
 #include <opencv2/cudaoptflow.hpp>
 #include <opencv2/cudawarping.hpp>
 #include <opencv2/cudaimgproc.hpp>
+#include <opencv2/cudafilters.hpp>
 #include <stdexcept>
 
 
@@ -48,41 +49,59 @@ cuda::GpuMat WarpingProcessor::processNewImage(cv::cuda::GpuMat& newImage)
 
 
   if(m_ref->valid()){
-    auto imgSize = this->m_ref->getReferenceImage().size();
+    const auto& imgSize = this->m_ref->getReferenceImage().size();
    
-   cuda::GpuMat grayScaleImage(imgSize, CV_32FC1);
-   cuda::GpuMat grayRef(imgSize, CV_32FC1);
+    cuda::GpuMat grayScaleImage(imgSize, CV_32FC1);
+    cuda::GpuMat grayScaleImage_smooth(imgSize, CV_32FC1);
+    cuda::GpuMat grayRef(imgSize, CV_32FC1);
+ 
+    //Compute the optical flow relative to the reference image
+    cuda::GpuMat flowImage(imgSize, CV_32FC2);
+    cuda::GpuMat flowImage_smooth(imgSize, CV_32FC2);
+ 
+    cuda::cvtColor(newImage, grayScaleImage, COLOR_RGB2GRAY, 1, cuda::Stream::Null());
+    cuda::GpuMat tmp(this->m_ref->getReferenceImage());//const correctnesss...
+    cuda::cvtColor(tmp, grayRef, COLOR_RGB2GRAY, 1, cuda::Stream::Null());
+ 
+    //estimate
+    mp_opticalFlow->calc(grayScaleImage, grayRef, flowImage, cv::cuda::Stream::Null());
+    
+    //Average all flow vectors to estimate smoothing required
+    auto averageShift = cv::cuda::absSum(flowImage) / (flowImage.size().height * flowImage.size().width);
+    std::cout << "Average shfit: " << averageShift << std::endl;
+    cv::Size filterSize( 7, 7);
 
-   //Compute the optical flow relative to the reference image
-   cuda::GpuMat flowImage(imgSize, CV_32FC2);
+    // Clearly there is an optimization to not generating the filter on every frame.  But this will work for now (it's really just a kernel generation)
+    auto filter = cv::cuda::createGaussianFilter(grayScaleImage.type(), grayScaleImage_smooth.type(), filterSize, averageShift[0], averageShift[1]);
 
-   cuda::cvtColor(newImage, grayScaleImage, COLOR_RGB2GRAY, 1, cuda::Stream::Null());
-   cuda::GpuMat tmp(this->m_ref->getReferenceImage());//const correctnesss...
-   cuda::cvtColor(tmp, grayRef, COLOR_RGB2GRAY, 1, cuda::Stream::Null());
+    filter->apply(grayScaleImage, grayScaleImage_smooth);
 
-   mp_opticalFlow->calc(grayRef, grayScaleImage, flowImage, cv::cuda::Stream::Null());
+    //mp_opticalFlow->calc(grayScaleImage_smooth, grayRef, flowImage_smooth, cv::cuda::Stream::Null());   
+    mp_opticalFlow->calc(grayRef, grayScaleImage_smooth, flowImage_smooth, cv::cuda::Stream::Null());   
+      
 
 
-   cuda::GpuMat chans[2];
-   cuda::split(flowImage, chans);
-   cuda::GpuMat x_map(m_x);
-   cuda::GpuMat y_map(m_y);
 
-   cuda::add(chans[1], m_x, x_map);
-   cuda::add(chans[0], m_y, y_map);
-
-   //Warp the newImage based on the optical flow
-   cuda::remap(newImage, processedImage, y_map, x_map, INTER_LINEAR, BORDER_REPLICATE, 0, cuda::Stream::Null());
-
-   //Update the reference Image using the new image (yes, this should be done AFTER)
-   m_ref->update(newImage);
-  }
-  else{
+    cuda::GpuMat chans[2];
+    cuda::split(flowImage_smooth, chans);
+    cuda::GpuMat x_map(m_x);
+    cuda::GpuMat y_map(m_y);
+ 
+    cuda::add(chans[0], m_x, x_map);
+    cuda::add(chans[1], m_y, y_map);
+ 
+    //Warp the newImage based on the optical flow
+    cuda::remap(newImage, processedImage, x_map, y_map, INTER_LINEAR, BORDER_REPLICATE, 0, cuda::Stream::Null());
+ 
+    //Update the reference Image using the new image (yes, this should be done AFTER)
     m_ref->update(newImage);
-    genBaseCoordinateMaps(newImage);
-    newImage.copyTo(processedImage); 
-  }
-
+   }
+   else{
+     m_ref->update(newImage);
+     genBaseCoordinateMaps(newImage);
+     newImage.copyTo(processedImage); 
+   }
+ 
   return processedImage;
 
 }
@@ -98,8 +117,8 @@ void WarpingProcessor::genBaseCoordinateMaps(const cuda::GpuMat& image)
   {
     for(int col = 0; col < shape.width; col++)
     {
-      x.at<float>(row, col) = static_cast<float>(row);
-      y.at<float>(row, col) = static_cast<float>(col);
+      x.at<float>(row, col) = static_cast<float>(col);
+      y.at<float>(row, col) = static_cast<float>(row);
     }
   }
   m_x.upload(x);

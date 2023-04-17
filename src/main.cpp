@@ -9,20 +9,26 @@
 
 int main(int argc, char* argv[])
 {
+  std::string inputFileName(argv[1]);
+  std::string outputFileName("processed_" + inputFileName) ;
+
   cv::Mat image, processedImage;
   cv::cuda::GpuMat gpu_in, gpu_out;
-  std::string filename("testData/base_in_heat_haze.mp4");
+  //std::string filename("testData/base_in_heat_haze.mp4");
   std::unique_ptr<WarpingProcessor> processor = nullptr;
 
 
 
-  cv::VideoCapture cap(filename);
+  cv::VideoCapture cap(inputFileName);
   
   if(!cap.isOpened())
   {
-    std::cout << "failed to open file: " << filename << std::endl;
+    std::cout << "failed to open file: " << inputFileName << std::endl;
     return -1;
   }
+  cv::Size frameSize(cv::CAP_PROP_FRAME_WIDTH, cv::CAP_PROP_FRAME_HEIGHT);
+
+  cv::VideoWriter output(outputFileName, cv::VideoWriter::fourcc('m','p','4','v'), cap.get(cv::CAP_PROP_FPS), frameSize);
 
   std::unique_ptr<ExponentialAverage> refImageGenerator = nullptr;
 
@@ -34,15 +40,19 @@ int main(int argc, char* argv[])
 
     image.convertTo(image_float, CV_32F);
 
-    gpu_in.upload(image);
     if(image.empty())
     {
       break;
     }
+
+
+    gpu_in.upload(image);
     //Setup processor
     if(isFirst)
     {
       refImageGenerator = std::make_unique<ExponentialAverage>(gpu_in, 0.7);
+
+      //There is also a native cuda optical flow we can leverage
       cv::Ptr<cv::cuda::FarnebackOpticalFlow> flowPtr = cv::cuda::FarnebackOpticalFlow::create( );
 
       processor = std::make_unique<WarpingProcessor>(std::move(refImageGenerator), flowPtr);
@@ -55,6 +65,7 @@ int main(int argc, char* argv[])
     gpu_out = processor->processNewImage(gpu_in);
 
     gpu_out.download(processedImage);    
+    output << processedImage ;
     cv::imshow("Processed Video", processedImage);
 
     cv::imshow("Video Player", image);

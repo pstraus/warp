@@ -69,7 +69,11 @@ cuda::GpuMat WarpingProcessor::processNewImage(cv::cuda::GpuMat& newImage)
     //Average all flow vectors to estimate smoothing required
     auto averageShift = cv::cuda::absSum(flowImage) / (flowImage.size().height * flowImage.size().width);
     std::cout << "Average shfit: " << averageShift << std::endl;
-    cv::Size filterSize( 7, 7);
+    
+    constexpr uint filterWidth = 11;
+    constexpr uint filterHeight = 11;
+    cv::Size filterSize( filterWidth, filterHeight);
+    static_assert(filterWidth %2 != 0 && filterHeight %2 != 0, "Filter width and height must be odd!");
 
     // Clearly there is an optimization to not generating the filter on every frame.  But this will work for now (it's really just a kernel generation)
     auto filter = cv::cuda::createGaussianFilter(grayScaleImage.type(), grayScaleImage_smooth.type(), filterSize, averageShift[0], averageShift[1]);
@@ -79,16 +83,23 @@ cuda::GpuMat WarpingProcessor::processNewImage(cv::cuda::GpuMat& newImage)
     //mp_opticalFlow->calc(grayScaleImage_smooth, grayRef, flowImage_smooth, cv::cuda::Stream::Null());   
     mp_opticalFlow->calc(grayRef, grayScaleImage_smooth, flowImage_smooth, cv::cuda::Stream::Null());   
       
-
-
+    cv::Size flowFilterSize(5,5);
+    auto flowFilter = cuda::createBoxFilter(CV_32FC1,CV_32FC1,flowFilterSize);
 
     cuda::GpuMat chans[2];
     cuda::split(flowImage_smooth, chans);
-    cuda::GpuMat x_map(m_x);
-    cuda::GpuMat y_map(m_y);
+
+    cuda::GpuMat x_map_smooth(chans[0]);
+    cuda::GpuMat y_map_smooth(chans[1]);
+
+    flowFilter->apply(chans[0], x_map_smooth);
+    flowFilter->apply(chans[1], y_map_smooth);
+
+    cuda::GpuMat x_map(m_x.size(), m_x.type());
+    cuda::GpuMat y_map(m_y.size(), m_y.type());
  
-    cuda::add(chans[0], m_x, x_map);
-    cuda::add(chans[1], m_y, y_map);
+    cuda::add(m_x, x_map_smooth, x_map);
+    cuda::add(m_y, y_map_smooth, y_map);
  
     //Warp the newImage based on the optical flow
     cuda::remap(newImage, processedImage, x_map, y_map, INTER_LINEAR, BORDER_REPLICATE, 0, cuda::Stream::Null());

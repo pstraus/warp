@@ -10,7 +10,7 @@
 #include <opencv2/cudaoptflow.hpp>
 #include <I_ReferenceImage.h>
 
-/// \brief abstract class describing what a reference image must do /
+/// \brief Concrete implementation of an I_CudaProcessor.  Stabilizes images via warping
 class WarpingProcessor : I_CudaProcessor
 {
   public:

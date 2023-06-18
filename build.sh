@@ -1,2 +1,2 @@
-cmake --build build --config Debug
+cmake --build build -j12 --config Debug
 

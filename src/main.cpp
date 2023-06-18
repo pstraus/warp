@@ -10,7 +10,7 @@
 int main(int argc, char* argv[])
 {
   std::string inputFileName(argv[1]);
-  std::string outputFileName("processed_" + inputFileName) ;
+  std::string outputFileName("processed_" + inputFileName ) ;
 
   cv::Mat image, processedImage;
   cv::cuda::GpuMat gpu_in, gpu_out;
@@ -26,14 +26,29 @@ int main(int argc, char* argv[])
     std::cout << "failed to open file: " << inputFileName << std::endl;
     return -1;
   }
-  cv::Size frameSize(cv::CAP_PROP_FRAME_WIDTH, cv::CAP_PROP_FRAME_HEIGHT);
+  
+  cv::Size imageSize(cap.get(cv::CAP_PROP_FRAME_WIDTH), cap.get(cv::CAP_PROP_FRAME_HEIGHT));
+  cv::Size outFrameSize(2*cap.get(cv::CAP_PROP_FRAME_WIDTH), cap.get(cv::CAP_PROP_FRAME_HEIGHT));
+  //cv::Size frameSize(cv::CAP_PROP_FRAME_HEIGHT, cv::CAP_PROP_FRAME_WIDTH);
 
-  cv::VideoWriter output(outputFileName, cv::VideoWriter::fourcc('m','p','4','v'), cap.get(cv::CAP_PROP_FPS), frameSize);
+  cv::VideoWriter output(outputFileName
+                        //, cv::VideoWriter::fourcc('d','i','v','x')
+                        , cap.get(cv::CAP_PROP_FOURCC)
+                        , static_cast<uint>(cap.get(cv::CAP_PROP_FPS))
+                        , outFrameSize);
+  if(!output.isOpened())
+  {
+    std::cout << "Failed to open video writer! " << std::endl;
+    return -1;
+  }
+  //cv::VideoWriter output(outputFileName, cv::CAP_FFMPEG, cv::VideoWriter::fourcc('m','p','4','v'), 20, frameSize);
 
   std::unique_ptr<ExponentialAverage> refImageGenerator = nullptr;
 
   bool isFirst(true);
   cv::Mat image_float;
+  cv::Mat img_processed(imageSize, CV_8UC3);
+  cv::Mat image_for_writing(outFrameSize, CV_8UC3);
   while(cap.isOpened())
   {
     cap >> image;
@@ -59,24 +74,21 @@ int main(int argc, char* argv[])
 
       isFirst = false;
     }
-
-    //refImageGenerator->update(gpu_in);
-    //gpu_out = refImageGenerator->getReferenceImage();
     gpu_out = processor->processNewImage(gpu_in);
 
     gpu_out.download(processedImage);    
-    output << processedImage ;
-    cv::imshow("Processed Video", processedImage);
 
-    cv::imshow("Video Player", image);
 
-    cv::Mat diff;
-    cv::absdiff(processedImage, image, diff);
-    cv::imshow("diff", diff);
-    cv::waitKey(25);
+    processedImage.convertTo(img_processed, CV_8UC3);
+    
+    cv::hconcat(image, img_processed, image_for_writing);
+
+    //Write the image
+    output << image_for_writing;
 
   }
   cap.release();
+  output.release();
   return 0;
 }
 

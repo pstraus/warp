@@ -68,7 +68,6 @@ cuda::GpuMat WarpingProcessor::processNewImage(cv::cuda::GpuMat& newImage)
     
     //Average all flow vectors to estimate smoothing required
     auto averageShift = cv::cuda::absSum(flowImage) / (flowImage.size().height * flowImage.size().width);
-    std::cout << "Average shfit: " << averageShift << std::endl;
     
     constexpr uint filterWidth = 11;
     constexpr uint filterHeight = 11;
@@ -80,14 +79,14 @@ cuda::GpuMat WarpingProcessor::processNewImage(cv::cuda::GpuMat& newImage)
 
     filter->apply(grayScaleImage, grayScaleImage_smooth);
 
-    //mp_opticalFlow->calc(grayScaleImage_smooth, grayRef, flowImage_smooth, cv::cuda::Stream::Null());   
-    mp_opticalFlow->calc(grayRef, grayScaleImage_smooth, flowImage_smooth, cv::cuda::Stream::Null());   
+    mp_opticalFlow->calc(grayScaleImage_smooth, grayRef, flowImage_smooth, cv::cuda::Stream::Null());   
+    mp_opticalFlow->calc(grayRef, grayScaleImage, flowImage, cv::cuda::Stream::Null());   
       
     cv::Size flowFilterSize(5,5);
     auto flowFilter = cuda::createBoxFilter(CV_32FC1,CV_32FC1,flowFilterSize);
 
     cuda::GpuMat chans[2];
-    cuda::split(flowImage_smooth, chans);
+    cuda::split(flowImage, chans);
 
     cuda::GpuMat x_map_smooth(chans[0]);
     cuda::GpuMat y_map_smooth(chans[1]);

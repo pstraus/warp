@@ -1,0 +1,10 @@
+{
+    "dependencies": [
+	{
+	    "name": "opencv",
+	    "default-features": false,
+	    "features": ["cuda","ffmpeg", "gstreamer", "jpeg"]
+	},
+	"gtest"
+    ]
+}

@@ -5,6 +5,12 @@
 	    "default-features": false,
 	    "features": ["cuda","ffmpeg", "gstreamer", "jpeg"]
 	},
-	"gtest"
+	{
+	    "name": "ffmpeg",
+	    "default-features": false,
+	    "features": ["alsa", "aom", "avcodec", "avdevice", "avfilter", "avformat", "avresample", "bzip2", "dav1d", "ffmpeg", "mp3lame", "nonfree", "nvcodec", "opencl", "opengl", "openh264"]
+	},
+	"gtest",
+	"gstreamer"
     ]
 }
